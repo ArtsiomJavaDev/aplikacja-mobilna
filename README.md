@@ -4,8 +4,9 @@
 Webowa aplikacja do wymiany kryptowalut i walut tradycyjnych z interfejsem użytkownika i dostępem do bazy danych PostgreSQL. Aplikacja umożliwia użytkownikom przeglądanie kursów kryptowalut i walut, składanie zamówień oraz zarządzanie kontem. Panel administracyjny pozwala na zarządzanie zamówieniami i użytkownikami.
 
 ## Autorzy projektu
-- **Imię Nazwisko** - Numer indeksu: [DO UZUPEŁNIENIA]
-- **Imię Nazwisko** - Numer indeksu: [DO UZUPEŁNIENIA]
+- **Artsiom Dziaineka** - Numer indeksu: 68088
+- **Bohdan Sokoniuk** - Numer indeksu: 54660
+- **Nazar Taran** - Numer indeksu: 52997
 
 ## Architektura projektu
 
