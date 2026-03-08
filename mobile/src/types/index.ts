@@ -1,0 +1,73 @@
+export interface User {
+  id: number;
+  email: string;
+  role: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  id: number;
+  email: string;
+  roles: string[];
+}
+
+export interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  error: string | null;
+  isAdmin: boolean;
+}
+
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface RegisterCredentials {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export interface CryptoItem {
+  id: string;
+  symbol: string;
+  name: string;
+  marketPrice: number;
+  sellPrice: number;
+}
+
+export interface OrderDTO {
+  id: number;
+  userId: number;
+  userEmail: string;
+  currencyCode: string;
+  amount: number;
+  totalPrice: number;
+  status: OrderStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type OrderStatus =
+  | 'PENDING_PAYMENT'
+  | 'PENDING_CONFIRMATION'
+  | 'CONFIRMED'
+  | 'IN_PROGRESS'
+  | 'READY_FOR_PICKUP'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+export interface CreateOrderRequest {
+  currencyCode: string;
+  amount: number;
+}
+
+export interface CurrencyItem {
+  id: number;
+  code: string;
+  name: string;
+  currentPrice: number;
+}

@@ -1,0 +1,91 @@
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { api } from '../../api/client';
+import { offlineCache } from '../../cache/offlineCache';
+import type { OrderDTO, CreateOrderRequest } from '../../types';
+
+interface OrdersState {
+  myOrders: OrderDTO[];
+  loading: boolean;
+  error: string | null;
+  createLoading: boolean;
+  fromCache?: boolean;
+}
+
+const initialState: OrdersState = {
+  myOrders: [],
+  loading: false,
+  error: null,
+  createLoading: false,
+};
+
+export const fetchMyOrders = createAsyncThunk(
+  'orders/fetchMy',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await api.get<OrderDTO[]>('/api/orders/my');
+      await offlineCache.setOrders(data);
+      return { data, fromCache: false };
+    } catch (e) {
+      const cached = await offlineCache.getOrders();
+      if (cached && Array.isArray(cached) && cached.length >= 0) {
+        return { data: cached as OrderDTO[], fromCache: true };
+      }
+      return rejectWithValue(e instanceof Error ? e.message : 'Błąd pobierania zamówień');
+    }
+  }
+);
+
+export const createOrder = createAsyncThunk(
+  'orders/create',
+  async (body: CreateOrderRequest, { rejectWithValue }) => {
+    try {
+      const { data } = await api.post<OrderDTO>('/api/orders', body);
+      return data;
+    } catch (e) {
+      return rejectWithValue(e instanceof Error ? e.message : 'Błąd tworzenia zamówienia');
+    }
+  }
+);
+
+const ordersSlice = createSlice({
+  name: 'orders',
+  initialState,
+  reducers: {
+    clearOrdersError: (state) => {
+      state.error = null;
+    },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchMyOrders.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMyOrders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.myOrders = action.payload.data;
+        state.fromCache = action.payload.fromCache;
+        state.error = null;
+      })
+      .addCase(fetchMyOrders.rejected, (state, action) => {
+        state.loading = false;
+        state.error = (action.payload as string) || 'Błąd';
+      })
+      .addCase(createOrder.pending, (state) => {
+        state.createLoading = true;
+        state.error = null;
+      })
+      .addCase(createOrder.fulfilled, (state, action) => {
+        state.createLoading = false;
+        state.myOrders = [action.payload, ...state.myOrders];
+        state.error = null;
+      })
+      .addCase(createOrder.rejected, (state, action) => {
+        state.createLoading = false;
+        state.error = (action.payload as string) || 'Błąd';
+      });
+  },
+});
+
+export const { clearOrdersError } = ordersSlice.actions;
+export default ordersSlice.reducer;
