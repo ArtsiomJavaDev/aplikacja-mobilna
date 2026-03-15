@@ -15,6 +15,7 @@ import { Link, router } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../src/hooks/useRedux';
 import { login, clearError } from '../../src/store/slices/authSlice';
 import { useConnectivity } from '../../src/hooks/useConnectivity';
+import { getBaseURL } from '../../src/api/client';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 
@@ -54,7 +55,12 @@ export default function LoginScreen(): React.JSX.Element {
       >
         <View style={[styles.card, { width: width > 400 ? 360 : width - spacing.lg * 2 }]}>
           <Text style={styles.title}>Logowanie</Text>
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <>
+              <Text style={styles.error}>{error}</Text>
+              <Text style={styles.apiHint}>Adres API: {getBaseURL()}</Text>
+            </>
+          ) : null}
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -105,8 +111,13 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.lg,
+    borderRadius: 20,
+    padding: spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 3,
   },
   title: {
     fontSize: 22,
@@ -118,20 +129,27 @@ const styles = StyleSheet.create({
   error: {
     color: colors.error,
     fontSize: 14,
+    marginBottom: spacing.xs,
+  },
+  apiHint: {
+    color: colors.textSecondary,
+    fontSize: 12,
     marginBottom: spacing.sm,
   },
   input: {
     backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
+    borderRadius: 12,
     padding: 14,
     fontSize: 16,
     color: colors.text,
     marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   button: {
     backgroundColor: colors.primary,
     paddingVertical: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
     marginTop: spacing.sm,
   },

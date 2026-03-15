@@ -36,11 +36,9 @@ axiosInstance.interceptors.request.use(
 // Добавляем перехватчик для обработки ответов
 axiosInstance.interceptors.response.use(
   (response) => {
-    // Проверяем наличие токена в ответе для эндпоинтов аутентификации
-    if (response.config.url?.includes('/api/auth/signin') || response.config.url?.includes('/api/auth/signup')) {
-      if (!response.data.token) {
-        return Promise.reject(new Error('Токен отсутствует в ответе'));
-      }
+    // Токен обязателен только при логине (при регистрации сервер zwraca komunikat)
+    if (response.config.url?.includes('/api/auth/signin') && !response.data.token) {
+      return Promise.reject(new Error('Токен отсутствует в ответе'));
     }
     return response;
   },

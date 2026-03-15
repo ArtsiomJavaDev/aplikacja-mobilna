@@ -1,8 +1,10 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Redirect } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { useAppSelector } from '../../src/hooks/useRedux';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { colors } from '../../src/theme/colors';
 
 export default function TabsLayout(): React.JSX.Element {
   const isAuthenticated = useAppSelector((s) => s.auth.isAuthenticated);
@@ -12,19 +14,28 @@ export default function TabsLayout(): React.JSX.Element {
   }
 
   return (
+    <>
+      <StatusBar style="light" />
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: '#1e293b' },
-        headerTintColor: '#f8fafc',
-        tabBarStyle: { backgroundColor: '#1e293b' },
-        tabBarActiveTintColor: '#6366f1',
-        tabBarInactiveTintColor: '#94a3b8',
+        headerStyle: { backgroundColor: colors.primary, shadowOpacity: 0 },
+        headerTintColor: '#fff',
+        headerTitleStyle: { fontWeight: '700', fontSize: 18 },
+        headerTitle: 'CryptoWallet',
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarLabelStyle: { fontWeight: '600', fontSize: 12 },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Start',
+          title: 'Dom',
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="home" size={size} color={color} />
           ),
@@ -33,9 +44,9 @@ export default function TabsLayout(): React.JSX.Element {
       <Tabs.Screen
         name="crypto"
         options={{
-          title: 'Kryptowaluty',
+          title: 'Krypto',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="bitcoin" size={size} color={color} />
+            <MaterialCommunityIcons name="chart-line" size={size} color={color} />
           ),
         }}
       />
@@ -44,10 +55,20 @@ export default function TabsLayout(): React.JSX.Element {
         options={{
           title: 'Zamówienia',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="format-list-bulleted" size={size} color={color} />
+            <MaterialCommunityIcons name="cart-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profil',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="account" size={size} color={color} />
           ),
         }}
       />
     </Tabs>
+    </>
   );
 }

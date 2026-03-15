@@ -206,7 +206,7 @@ const AdminPanel: React.FC = () => {
                     <TableCell>{order.userEmail}</TableCell>
                     <TableCell>{order.currencyCode || order.currency?.code}</TableCell>
                     <TableCell align="right">{order.amount}</TableCell>
-                    <TableCell align="right">{order.totalPrice.toFixed(2)}</TableCell>
+                    <TableCell align="right">{(order.totalPrice ?? 0).toFixed(2)}</TableCell>
                     <TableCell>
                       <Box sx={{ 
                         display: 'inline-block',

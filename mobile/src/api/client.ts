@@ -15,7 +15,7 @@ export function setOnUnauthorized(callback: () => void): void {
   onUnauthorized = callback;
 }
 
-const getBaseURL = (): string => {
+export const getBaseURL = (): string => {
   const url = process.env.EXPO_PUBLIC_API_URL;
   if (url) return url.replace(/\/$/, '');
   if (typeof process !== 'undefined' && (process as unknown as { env?: Record<string, string> }).env?.EXPO_PUBLIC_API_URL) {
@@ -27,7 +27,7 @@ const getBaseURL = (): string => {
 export const api = axios.create({
   baseURL: getBaseURL(),
   headers: { 'Content-Type': 'application/json' },
-  timeout: 15000,
+  timeout: 30000,
 });
 
 /** On web SecureStore is not supported; use AsyncStorage. On native use SecureStore. */

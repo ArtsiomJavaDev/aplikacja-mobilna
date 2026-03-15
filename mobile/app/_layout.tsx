@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { Provider } from 'react-redux';
 import { store } from '../src/store';
 import { checkAuth, logout } from '../src/store/slices/authSlice';
@@ -32,10 +33,11 @@ export default function RootLayout(): React.JSX.Element {
 
   return (
     <ErrorBoundary>
+      <StatusBar style="dark" />
       <Provider store={store}>
         <PaperProvider
           theme={{
-            dark: true,
+            dark: false,
             colors: {
               primary: colors.primary,
               background: colors.background,

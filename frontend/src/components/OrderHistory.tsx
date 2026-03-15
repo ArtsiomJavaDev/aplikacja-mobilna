@@ -159,7 +159,7 @@ const OrderHistory: React.FC = () => {
                   <TableCell>{order.userEmail}</TableCell>
                   <TableCell>{order.currencyCode}</TableCell>
                   <TableCell align="right">{order.amount}</TableCell>
-                  <TableCell align="right">{order.totalPrice.toFixed(2)}</TableCell>
+                  <TableCell align="right">{(order.totalPrice ?? 0).toFixed(2)}</TableCell>
                   <TableCell>
                     <Chip
                       label={getStatusLabel(order.status)}

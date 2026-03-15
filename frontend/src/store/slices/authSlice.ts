@@ -15,7 +15,7 @@ const initialState: AuthState = {
 export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
   async () => {
-    const response = await axiosInstance.get('/api/auth/me');
+    const response = await axiosInstance.get('/api/auth/check');
     if (!response.data) {
       throw new Error('Brak danych użytkownika');
     }
@@ -27,17 +27,14 @@ export const login = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      console.log('Wysyłanie żądania logowania z danymi:', credentials);
       const response = await axiosInstance.post<LoginResponse>('/api/auth/signin', credentials);
-      console.log('Otrzymana odpowiedź logowania:', response.data);
-      
       const { token, id, email, roles } = response.data;
       
       localStorage.setItem('token', token);
       localStorage.setItem('userId', id.toString());
       axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       
-      const processedResult = {
+      return {
         token,
         user: {
           id,
@@ -45,8 +42,6 @@ export const login = createAsyncThunk(
           role: roles && roles.length > 0 ? roles[0] : 'ROLE_USER'
         }
       };
-      console.log('Przetworzony wynik logowania:', processedResult);
-      return processedResult;
     } catch (error) {
       if (isAxiosError(error) && error.response) {
         if (error.response.status === 403) {

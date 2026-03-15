@@ -10,7 +10,9 @@ import {
   useWindowDimensions,
   RefreshControl,
   Alert,
+  Platform,
 } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../src/hooks/useRedux';
 import { fetchCrypto } from '../../src/store/slices/cryptoSlice';
 import { createOrder } from '../../src/store/slices/ordersSlice';
@@ -29,7 +31,9 @@ function CryptoCard({
   creating: boolean;
 }): React.JSX.Element {
   const [amount, setAmount] = React.useState('');
-  const discount = ((item.marketPrice - item.sellPrice) / item.marketPrice * 100).toFixed(1);
+  const discount = ((item.marketPrice - item.sellPrice) / item.marketPrice) * 100;
+  const discountStr = discount.toFixed(1);
+  const isPositive = true;
 
   const handleOrder = (): void => {
     const num = parseFloat(amount);
@@ -41,32 +45,53 @@ function CryptoCard({
     }
   };
 
+  const initial = item.symbol.charAt(0);
+
   return (
     <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.name}>{item.name} ({item.symbol})</Text>
-        <Text style={styles.discount}>-{discount}%</Text>
+      <View style={styles.cardTop}>
+        <View style={styles.iconCircle}>
+          <Text style={styles.iconLetter}>{initial}</Text>
+        </View>
+        <View style={styles.cardMiddle}>
+          <Text style={styles.name}>{item.name}</Text>
+          <Text style={styles.symbol}>{item.symbol}</Text>
+        </View>
+        <View style={styles.cardRight}>
+          <Text style={styles.price}>
+            ${item.marketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </Text>
+          <View style={styles.changeRow}>
+            <MaterialCommunityIcons
+              name={isPositive ? 'trending-up' : 'trending-down'}
+              size={14}
+              color={isPositive ? colors.success : colors.error}
+            />
+            <Text style={[styles.changeText, isPositive ? styles.changeUp : styles.changeDown]}>
+              ~{discountStr}%
+            </Text>
+          </View>
+        </View>
       </View>
-      <Text style={styles.price}>Rynek: ${item.marketPrice.toLocaleString()}</Text>
-      <Text style={styles.sellPrice}>Skup: ${item.sellPrice.toLocaleString()}</Text>
-      <View style={styles.row}>
+      <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          placeholder="Ilość"
-          placeholderTextColor={colors.textSecondary}
+          placeholder="0.00"
+          placeholderTextColor={colors.textMuted}
           value={amount}
           onChangeText={setAmount}
           keyboardType="decimal-pad"
           editable={!creating}
         />
-        <TouchableOpacity
-          style={[styles.orderBtn, creating && styles.orderBtnDisabled]}
-          onPress={handleOrder}
-          disabled={creating}
-        >
-          <Text style={styles.orderBtnText}>Zamów</Text>
-        </TouchableOpacity>
       </View>
+      <TouchableOpacity
+        style={[styles.sellBtn, creating && styles.sellBtnDisabled]}
+        onPress={handleOrder}
+        disabled={creating}
+        activeOpacity={0.85}
+      >
+        <Text style={styles.sellBtnText}>SPRZEDAJ NAM</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -106,10 +131,13 @@ export default function CryptoScreen(): React.JSX.Element {
 
   const keyExtractor = useCallback((item: CryptoItem) => item.id, []);
 
-  const listContent = useMemo(() => ({
-    padding: spacing.md,
-    paddingBottom: 80,
-  }), []);
+  const listContent = useMemo(
+    () => ({
+      padding: spacing.md,
+      paddingBottom: 100,
+    }),
+    []
+  );
 
   if (error && list.length === 0) {
     return (
@@ -129,6 +157,9 @@ export default function CryptoScreen(): React.JSX.Element {
           <Text style={styles.offlineText}>Dane z pamięci podręcznej (offline)</Text>
         </View>
       )}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Skupujemy kryptowaluty</Text>
+      </View>
       <FlatList
         data={list}
         renderItem={renderItem}
@@ -150,6 +181,16 @@ export default function CryptoScreen(): React.JSX.Element {
   );
 }
 
+const cardShadow = Platform.select({
+  ios: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+  },
+  android: { elevation: 4 },
+});
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   centered: {
@@ -162,43 +203,71 @@ const styles = StyleSheet.create({
   retryBtn: {
     backgroundColor: colors.primary,
     paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
   },
-  retryBtnText: { color: '#fff', fontWeight: '600' },
+  retryBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   offlineBanner: {
-    backgroundColor: colors.warning,
+    backgroundColor: colors.warningLight,
     padding: spacing.sm,
     alignItems: 'center',
   },
-  offlineText: { color: '#000', fontSize: 12 },
+  offlineText: { color: colors.warning, fontSize: 12, fontWeight: '500' },
+  sectionHeader: { paddingHorizontal: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xs },
+  sectionTitle: { fontSize: 18, fontWeight: '700', color: colors.text },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: spacing.md,
     marginBottom: spacing.md,
+    ...cardShadow,
   },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-  name: { fontSize: 16, fontWeight: '600', color: colors.text },
-  discount: { fontSize: 12, color: colors.success },
-  price: { fontSize: 12, color: colors.textSecondary, marginBottom: 4 },
-  sellPrice: { fontSize: 14, color: colors.success, marginBottom: spacing.sm },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  input: {
-    flex: 1,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 8,
-    padding: 10,
-    color: colors.text,
-    fontSize: 14,
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
-  orderBtn: {
+  iconCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
-  orderBtnDisabled: { opacity: 0.6 },
-  orderBtnText: { color: '#fff', fontWeight: '600' },
+  iconLetter: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  cardMiddle: { flex: 1 },
+  name: { fontSize: 16, fontWeight: '700', color: colors.text },
+  symbol: { fontSize: 13, color: colors.textSecondary, marginTop: 2 },
+  cardRight: { alignItems: 'flex-end' },
+  price: { fontSize: 16, fontWeight: '700', color: colors.text },
+  changeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+  changeText: { fontSize: 12, fontWeight: '600' },
+  changeUp: { color: colors.success },
+  changeDown: { color: colors.error },
+  inputRow: { marginBottom: spacing.sm },
+  input: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    color: colors.text,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  sellBtn: {
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  sellBtnDisabled: { opacity: 0.6 },
+  sellBtnText: { color: '#fff', fontWeight: '700', fontSize: 14, letterSpacing: 0.5 },
   loadingContainer: { padding: spacing.xl, alignItems: 'center' },
 });

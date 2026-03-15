@@ -62,7 +62,9 @@ export const login = createAsyncThunk(
       } else if (err instanceof Error && err.message) {
         message = err.message;
         if (message === 'Network Error' || message.includes('network') || message.includes('ECONNREFUSED')) {
-          message = 'Brak połączenia z serwerem. Uruchom backend i ustaw EXPO_PUBLIC_API_URL (emulator Android: http://10.0.2.2:8081).';
+          message = 'Brak połączenia z serwerem. Uruchom backend (docker compose up). Na emulatorze Android: EXPO_PUBLIC_API_URL=http://10.0.2.2:8081. Na telefonie w Wi‑Fi: adres IP komputera (ipconfig), np. http://192.168.1.5:8081. Potem: npx expo start -c';
+        } else if (message.includes('timeout') || message.includes('exceeded')) {
+          message = 'Serwer nie odpowiada. 1) Backend działa? (docker compose up) 2) Na telefonie w Wi‑Fi w pliku mobile/.env ustaw EXPO_PUBLIC_API_URL=http://IP_KOMPUTERA:8081 (ipconfig → IPv4). 3) Uruchom ponownie: npx expo start -c';
         }
       }
       return rejectWithValue(message);
@@ -90,6 +92,8 @@ export const register = createAsyncThunk(
         message = err.message;
         if (message === 'Network Error' || message.includes('network') || message.includes('ECONNREFUSED')) {
           message = 'Brak połączenia z serwerem. Uruchom backend (docker compose up) i ustaw EXPO_PUBLIC_API_URL: na emulatorze Android — http://10.0.2.2:8081, na urządzeniu — http://IP_KOMPUTERA:8081.';
+        } else if (message.includes('timeout') || message.includes('exceeded')) {
+          message = 'Serwer nie odpowiada w czasie. Upewnij się, że backend działa (docker compose up) i spróbuj ponownie.';
         }
       }
       return rejectWithValue(message);
