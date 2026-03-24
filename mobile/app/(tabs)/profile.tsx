@@ -1,9 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../src/hooks/useRedux';
 import { logout } from '../../src/store/slices/authSlice';
+import FadeInScreen from '../../src/components/FadeInScreen';
+import haptics from '../../src/utils/haptics';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 
@@ -12,51 +14,111 @@ export default function ProfileScreen(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((s) => s.auth);
 
-  const handleLogout = (): void => {
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslateY = useRef(new Animated.Value(16)).current;
+  const adminScale = useRef(new Animated.Value(1)).current;
+  const logoutScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(cardOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [cardOpacity, cardTranslateY]);
+
+  const handleLogout = async (): Promise<void> => {
+    await haptics.warning();
     dispatch(logout());
     router.replace('/(auth)/login');
   };
 
+  const scaleIn = (scale: Animated.Value): void => {
+    Animated.spring(scale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 6,
+    }).start();
+  };
+
+  const scaleOut = (scale: Animated.Value): void => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 6,
+    }).start();
+  };
+
   return (
-    <ScrollView
-      contentContainerStyle={[styles.container, { paddingBottom: 100 }]}
-      style={styles.scroll}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={[styles.card, width > 400 && { maxWidth: 420, alignSelf: 'center' }]}>
-        <View style={styles.avatarWrap}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarLetter}>
-              {user?.email?.charAt(0).toUpperCase() ?? '?'}
-            </Text>
-          </View>
-          <Text style={styles.email}>{user?.email ?? '—'}</Text>
-          {user?.role && (
-            <View style={styles.roleBadge}>
-              <Text style={styles.roleText}>{user.role}</Text>
-            </View>
-          )}
-        </View>
-        {user?.role === 'ROLE_ADMIN' && (
-          <TouchableOpacity
-            style={styles.adminButton}
-            onPress={() => router.push('/admin')}
-            activeOpacity={0.85}
-          >
-            <MaterialCommunityIcons name="shield-account" size={22} color="#fff" />
-            <Text style={styles.adminButtonText}>Panel administratora</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-          activeOpacity={0.85}
+      <FadeInScreen>
+        <ScrollView
+            contentContainerStyle={[styles.container, { paddingBottom: 100 }]}
+            style={styles.scroll}
+            showsVerticalScrollIndicator={false}
         >
-          <MaterialCommunityIcons name="logout" size={22} color={colors.error} />
-          <Text style={styles.logoutText}>Wyloguj</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          <Animated.View
+              style={[
+                styles.card,
+                width > 400 && { maxWidth: 420, alignSelf: 'center' },
+                {
+                  opacity: cardOpacity,
+                  transform: [{ translateY: cardTranslateY }],
+                },
+              ]}
+          >
+            <View style={styles.avatarWrap}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarLetter}>
+                  {user?.email?.charAt(0).toUpperCase() ?? '?'}
+                </Text>
+              </View>
+              <Text style={styles.email}>{user?.email ?? '—'}</Text>
+              {user?.role && (
+                  <View style={styles.roleBadge}>
+                    <Text style={styles.roleText}>{user.role}</Text>
+                  </View>
+              )}
+            </View>
+
+            {user?.role === 'ROLE_ADMIN' && (
+                <Animated.View style={{ transform: [{ scale: adminScale }], width: '100%' }}>
+                  <TouchableOpacity
+                      style={styles.adminButton}
+                      onPress={() => router.push('/admin')}
+                      activeOpacity={0.85}
+                      onPressIn={() => scaleIn(adminScale)}
+                      onPressOut={() => scaleOut(adminScale)}
+                  >
+                    <MaterialCommunityIcons name="shield-account" size={22} color="#fff" />
+                    <Text style={styles.adminButtonText}>Panel administratora</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+            )}
+
+            <Animated.View style={{ transform: [{ scale: logoutScale }], width: '100%' }}>
+              <TouchableOpacity
+                  style={styles.logoutButton}
+                  onPress={handleLogout}
+                  activeOpacity={0.85}
+                  onPressIn={() => scaleIn(logoutScale)}
+                  onPressOut={() => scaleOut(logoutScale)}
+              >
+                <MaterialCommunityIcons name="logout" size={22} color={colors.error} />
+                <Text style={styles.logoutText}>Wyloguj</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+        </ScrollView>
+      </FadeInScreen>
   );
 }
 
@@ -110,9 +172,11 @@ const styles = StyleSheet.create({
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: 12,
     paddingHorizontal: 20,
+    width: '100%',
   },
   logoutText: { color: colors.error, fontSize: 16, fontWeight: '600' },
 });

@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Alert,
   Platform,
+  Animated,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../src/hooks/useRedux';
@@ -22,18 +23,39 @@ import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 
 function CryptoCard({
-  item,
-  onOrder,
-  creating,
-}: {
+                      item,
+                      onOrder,
+                      creating,
+                      index,
+                    }: {
   item: CryptoItem;
   onOrder: (symbol: string, amount: number) => void;
   creating: boolean;
+  index: number;
 }): React.JSX.Element {
   const [amount, setAmount] = React.useState('');
+  const opacity = React.useRef(new Animated.Value(0)).current;
+  const translateY = React.useRef(new Animated.Value(12)).current;
   const discount = ((item.marketPrice - item.sellPrice) / item.marketPrice) * 100;
   const discountStr = discount.toFixed(1);
   const isPositive = true;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 280,
+        delay: index * 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 280,
+        delay: index * 60,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [opacity, translateY, index]);
 
   const handleOrder = (): void => {
     const num = parseFloat(amount);
@@ -48,51 +70,59 @@ function CryptoCard({
   const initial = item.symbol.charAt(0);
 
   return (
-    <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <View style={styles.iconCircle}>
-          <Text style={styles.iconLetter}>{initial}</Text>
-        </View>
-        <View style={styles.cardMiddle}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.symbol}>{item.symbol}</Text>
-        </View>
-        <View style={styles.cardRight}>
-          <Text style={styles.price}>
-            ${item.marketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          </Text>
-          <View style={styles.changeRow}>
-            <MaterialCommunityIcons
-              name={isPositive ? 'trending-up' : 'trending-down'}
-              size={14}
-              color={isPositive ? colors.success : colors.error}
-            />
-            <Text style={[styles.changeText, isPositive ? styles.changeUp : styles.changeDown]}>
-              ~{discountStr}%
+      <Animated.View
+          style={[
+            styles.card,
+            {
+              opacity,
+              transform: [{ translateY }],
+            },
+          ]}
+      >
+        <View style={styles.cardTop}>
+          <View style={styles.iconCircle}>
+            <Text style={styles.iconLetter}>{initial}</Text>
+          </View>
+          <View style={styles.cardMiddle}>
+            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.symbol}>{item.symbol}</Text>
+          </View>
+          <View style={styles.cardRight}>
+            <Text style={styles.price}>
+              ${item.marketPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </Text>
+            <View style={styles.changeRow}>
+              <MaterialCommunityIcons
+                  name={isPositive ? 'trending-up' : 'trending-down'}
+                  size={14}
+                  color={isPositive ? colors.success : colors.error}
+              />
+              <Text style={[styles.changeText, isPositive ? styles.changeUp : styles.changeDown]}>
+                ~{discountStr}%
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="0.00"
-          placeholderTextColor={colors.textMuted}
-          value={amount}
-          onChangeText={setAmount}
-          keyboardType="decimal-pad"
-          editable={!creating}
-        />
-      </View>
-      <TouchableOpacity
-        style={[styles.sellBtn, creating && styles.sellBtnDisabled]}
-        onPress={handleOrder}
-        disabled={creating}
-        activeOpacity={0.85}
-      >
-        <Text style={styles.sellBtnText}>SPRZEDAJ NAM</Text>
-      </TouchableOpacity>
-    </View>
+        <View style={styles.inputRow}>
+          <TextInput
+              style={styles.input}
+              placeholder="0.00"
+              placeholderTextColor={colors.textMuted}
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+              editable={!creating}
+          />
+        </View>
+        <TouchableOpacity
+            style={[styles.sellBtn, creating && styles.sellBtnDisabled]}
+            onPress={handleOrder}
+            disabled={creating}
+            activeOpacity={0.85}
+        >
+          <Text style={styles.sellBtnText}>SPRZEDAJ NAM</Text>
+        </TouchableOpacity>
+      </Animated.View>
   );
 }
 
@@ -112,21 +142,21 @@ export default function CryptoScreen(): React.JSX.Element {
   }, [load]);
 
   const handleOrder = useCallback(
-    (symbol: string, amount: number) => {
-      if (!isConnected) {
-        Alert.alert('Brak połączenia', 'Operacja wymaga internetu.');
-        return;
-      }
-      dispatch(createOrder({ currencyCode: symbol, amount }));
-    },
-    [dispatch, isConnected]
+      (symbol: string, amount: number) => {
+        if (!isConnected) {
+          Alert.alert('Brak połączenia', 'Operacja wymaga internetu.');
+          return;
+        }
+        dispatch(createOrder({ currencyCode: symbol, amount }));
+      },
+      [dispatch, isConnected]
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: CryptoItem }) => (
-      <CryptoCard item={item} onOrder={handleOrder} creating={createLoading} />
-    ),
-    [handleOrder, createLoading]
+      ({ item, index }: { item: CryptoItem; index: number }) => (
+          <CryptoCard item={item} onOrder={handleOrder} creating={createLoading} index={index} />
+      ),
+      [handleOrder, createLoading]
   );
 
   const keyExtractor = useCallback((item: CryptoItem) => item.id, []);

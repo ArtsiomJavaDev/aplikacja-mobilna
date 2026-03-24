@@ -5,6 +5,7 @@
 import axios, { AxiosError } from 'axios';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const TOKEN_KEY = 'auth_token';
 
@@ -39,7 +40,6 @@ async function getStoredTokenImpl(): Promise<string | null> {
       return null;
     }
   }
-  const SecureStore = require('expo-secure-store').default;
   try {
     return await SecureStore.getItemAsync(TOKEN_KEY);
   } catch {
@@ -52,7 +52,6 @@ async function setStoredTokenImpl(token: string): Promise<void> {
     await AsyncStorage.setItem(TOKEN_KEY, token);
     return;
   }
-  const SecureStore = require('expo-secure-store').default;
   await SecureStore.setItemAsync(TOKEN_KEY, token);
 }
 
@@ -61,7 +60,6 @@ async function clearStoredTokenImpl(): Promise<void> {
     await AsyncStorage.removeItem(TOKEN_KEY);
     return;
   }
-  const SecureStore = require('expo-secure-store').default;
   await SecureStore.deleteItemAsync(TOKEN_KEY);
 }
 

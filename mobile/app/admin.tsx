@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,14 @@ import {
   Modal,
   ScrollView,
   Pressable,
+  Animated,
 } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppSelector } from '../src/hooks/useRedux';
 import { api } from '../src/api/client';
+import FadeInScreen from '../src/components/FadeInScreen';
+import haptics from '../src/utils/haptics';
 import { colors } from '../src/theme/colors';
 import { spacing } from '../src/theme/spacing';
 import type { OrderStatus } from '../src/types';
@@ -52,7 +55,7 @@ const STATUS_OPTIONS: OrderStatus[] = [
   'CANCELLED',
 ];
 
-export default function AdminScreen(): React.JSX.Element {
+export default function AdminScreen(): React.JSX.Element | null {
   const isAdmin = useAppSelector((s) => s.auth.isAdmin);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +63,30 @@ export default function AdminScreen(): React.JSX.Element {
   const [error, setError] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [statusModalOrder, setStatusModalOrder] = useState<AdminOrder | null>(null);
+
+  const modalOpacity = useRef(new Animated.Value(0)).current;
+  const modalScale = useRef(new Animated.Value(0.96)).current;
+
+  useEffect(() => {
+    if (statusModalOrder) {
+      Animated.parallel([
+        Animated.timing(modalOpacity, {
+          toValue: 1,
+          duration: 180,
+          useNativeDriver: true,
+        }),
+        Animated.spring(modalScale, {
+          toValue: 1,
+          useNativeDriver: true,
+          speed: 30,
+          bounciness: 6,
+        }),
+      ]).start();
+    } else {
+      modalOpacity.setValue(0);
+      modalScale.setValue(0.96);
+    }
+  }, [statusModalOrder, modalOpacity, modalScale]);
 
   const fetchOrders = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -93,8 +120,10 @@ export default function AdminScreen(): React.JSX.Element {
     try {
       setUpdatingId(orderId);
       await api.put(`/api/admin/orders/${orderId}/status`, { newStatus });
+      await haptics.success();
       await fetchOrders(false);
     } catch (e: unknown) {
+      await haptics.error();
       const msg = e && typeof e === 'object' && 'response' in e
         ? (e as { response?: { data?: { message?: string } } }).response?.data?.message
         : null;
@@ -105,10 +134,12 @@ export default function AdminScreen(): React.JSX.Element {
   }, [fetchOrders]);
 
   const openStatusModal = useCallback((order: AdminOrder) => {
+    void haptics.mediumTap();
     setStatusModalOrder(order);
   }, []);
 
   const closeStatusModal = useCallback(() => {
+    void haptics.lightTap();
     setStatusModalOrder(null);
   }, []);
 
@@ -161,72 +192,99 @@ export default function AdminScreen(): React.JSX.Element {
   );
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Panel administratora</Text>
-      </View>
-      {error && (
-        <View style={styles.errorBanner}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => fetchOrders(false)}>
-            <Text style={styles.retryText}>Spróbuj ponownie</Text>
+    <FadeInScreen>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={async () => {
+              await haptics.lightTap();
+              router.back();
+            }}
+            style={styles.backBtn}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={24} color="#fff" />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>Panel administratora</Text>
         </View>
-      )}
-      {loading ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
-      ) : (
-        <FlatList
-          data={orders}
-          renderItem={renderItem}
-          keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={[styles.list, { paddingBottom: 40 }]}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => fetchOrders(true)} colors={[colors.primary]} />
-          }
-          ListEmptyComponent={
-            <View style={styles.centered}>
-              <Text style={styles.emptyText}>Brak zamówień</Text>
-            </View>
-          }
-        />
-      )}
-
-      <Modal
-        visible={statusModalOrder !== null}
-        transparent
-        animationType="fade"
-        onRequestClose={closeStatusModal}
-      >
-        <Pressable style={styles.modalOverlay} onPress={closeStatusModal}>
-          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>
-              Zamówienie #{statusModalOrder?.id} — zmiana statusu
-            </Text>
-            <ScrollView style={styles.modalScroll} keyboardShouldPersistTaps="handled">
-              {STATUS_OPTIONS.map((s) => (
-                <TouchableOpacity
-                  key={s}
-                  style={styles.modalOption}
-                  onPress={() => onSelectStatus(s)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.modalOptionText}>{STATUS_LABELS[s]}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity style={styles.modalCancel} onPress={closeStatusModal}>
-              <Text style={styles.modalCancelText}>Anuluj</Text>
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity
+              onPress={async () => {
+                await haptics.lightTap();
+                fetchOrders(false);
+              }}
+            >
+              <Text style={styles.retryText}>Spróbuj ponownie</Text>
             </TouchableOpacity>
+          </View>
+        )}
+        {loading ? (
+          <View style={styles.centered}>
+            <ActivityIndicator size="large" color={colors.primary} />
+          </View>
+        ) : (
+          <FlatList
+            data={orders}
+            renderItem={renderItem}
+            keyExtractor={(item) => String(item.id)}
+            contentContainerStyle={[styles.list, { paddingBottom: 40 }]}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => fetchOrders(true)}
+                colors={[colors.primary]}
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.centered}>
+                <Text style={styles.emptyText}>Brak zamówień</Text>
+              </View>
+            }
+          />
+        )}
+
+        <Modal
+          visible={statusModalOrder !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={closeStatusModal}
+        >
+          <Pressable style={styles.modalOverlay} onPress={closeStatusModal}>
+            <Animated.View
+              style={[
+                styles.modalContent,
+                {
+                  opacity: modalOpacity,
+                  transform: [{ scale: modalScale }],
+                },
+              ]}
+            >
+              <Pressable onPress={(e) => e.stopPropagation()}>
+                <Text style={styles.modalTitle}>
+                  Zamówienie #{statusModalOrder?.id} — zmiana statusu
+                </Text>
+                <ScrollView style={styles.modalScroll} keyboardShouldPersistTaps="handled">
+                  {STATUS_OPTIONS.map((s) => (
+                    <TouchableOpacity
+                      key={s}
+                      style={styles.modalOption}
+                      onPress={() => onSelectStatus(s)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.modalOptionText}>{STATUS_LABELS[s]}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity style={styles.modalCancel} onPress={closeStatusModal}>
+                  <Text style={styles.modalCancelText}>Anuluj</Text>
+                </TouchableOpacity>
+              </Pressable>
+            </Animated.View>
           </Pressable>
-        </Pressable>
-      </Modal>
-    </View>
+        </Modal>
+      </View>
+    </FadeInScreen>
   );
 }
 

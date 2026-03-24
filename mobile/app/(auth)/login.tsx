@@ -1,6 +1,5 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  View,
   Text,
   TextInput,
   TouchableOpacity,
@@ -10,12 +9,15 @@ import {
   ScrollView,
   Dimensions,
   Alert,
+  Animated,
 } from 'react-native';
 import { Link, router } from 'expo-router';
 import { useAppDispatch, useAppSelector } from '../../src/hooks/useRedux';
 import { login, clearError } from '../../src/store/slices/authSlice';
 import { useConnectivity } from '../../src/hooks/useConnectivity';
 import { getBaseURL } from '../../src/api/client';
+import haptics from '../../src/utils/haptics';
+import FadeInScreen from '../../src/components/FadeInScreen';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 
@@ -28,7 +30,27 @@ export default function LoginScreen(): React.JSX.Element {
   const { loading, error } = useAppSelector((s) => s.auth);
   const isConnected = useConnectivity();
 
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const cardTranslateY = useRef(new Animated.Value(16)).current;
+  const buttonScale = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(cardOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(cardTranslateY, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [cardOpacity, cardTranslateY]);
+
   const handleLogin = useCallback(async () => {
+    await haptics.lightTap();
     if (!email.trim() || !password) {
       Alert.alert('Błąd', 'Wpisz email i hasło');
       return;
@@ -44,57 +66,97 @@ export default function LoginScreen(): React.JSX.Element {
     }
   }, [email, password, dispatch, isConnected]);
 
+  const pressIn = (): void => {
+    Animated.spring(buttonScale, {
+      toValue: 0.98,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 6,
+    }).start();
+  };
+
+  const pressOut = (): void => {
+    Animated.spring(buttonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 30,
+      bounciness: 6,
+    }).start();
+  };
+
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.container}
-    >
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <View style={[styles.card, { width: width > 400 ? 360 : width - spacing.lg * 2 }]}>
-          <Text style={styles.title}>Logowanie</Text>
-          {error ? (
-            <>
-              <Text style={styles.error}>{error}</Text>
-              <Text style={styles.apiHint}>Adres API: {getBaseURL()}</Text>
-            </>
-          ) : null}
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={colors.textSecondary}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            editable={!loading}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Hasło"
-            placeholderTextColor={colors.textSecondary}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            editable={!loading}
-          />
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleLogin}
-            disabled={loading}
+      <FadeInScreen>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.container}
+        >
+          <ScrollView
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
           >
-            <Text style={styles.buttonText}>{loading ? 'Logowanie...' : 'Zaloguj'}</Text>
-          </TouchableOpacity>
-          <Link href="/(auth)/register" asChild>
-            <TouchableOpacity style={styles.link}>
-              <Text style={styles.linkText}>Nie masz konta? Zarejestruj się</Text>
-            </TouchableOpacity>
-          </Link>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <Animated.View
+                style={[
+                  styles.card,
+                  { width: width > 400 ? 360 : width - spacing.lg * 2 },
+                  {
+                    opacity: cardOpacity,
+                    transform: [{ translateY: cardTranslateY }],
+                  },
+                ]}
+            >
+              <Text style={styles.title}>Logowanie</Text>
+              {error ? (
+                  <>
+                    <Text style={styles.error}>{error}</Text>
+                    <Text style={styles.apiHint}>Adres API: {getBaseURL()}</Text>
+                  </>
+              ) : null}
+              <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor={colors.textSecondary}
+                  value={email}
+                  onChangeText={setEmail}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  editable={!loading}
+              />
+              <TextInput
+                  style={styles.input}
+                  placeholder="Hasło"
+                  placeholderTextColor={colors.textSecondary}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  editable={!loading}
+              />
+              <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+                <TouchableOpacity
+                    style={[styles.button, loading && styles.buttonDisabled]}
+                    onPress={handleLogin}
+                    onPressIn={pressIn}
+                    onPressOut={pressOut}
+                    disabled={loading}
+                    activeOpacity={0.9}
+                >
+                  <Text style={styles.buttonText}>{loading ? 'Logowanie...' : 'Zaloguj'}</Text>
+                </TouchableOpacity>
+              </Animated.View>
+              <Link href="/(auth)/register" asChild>
+                <TouchableOpacity
+                    style={styles.link}
+                    onPress={async () => {
+                      await haptics.lightTap();
+                    }}
+                    activeOpacity={0.85}
+                >
+                  <Text style={styles.linkText}>Nie masz konta? Zarejestruj się</Text>
+                </TouchableOpacity>
+              </Link>
+            </Animated.View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </FadeInScreen>
   );
 }
 

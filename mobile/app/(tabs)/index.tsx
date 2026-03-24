@@ -12,6 +12,8 @@ import { router } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppSelector } from '../../src/hooks/useRedux';
 import { useLocation } from '../../src/hooks/useLocation';
+import FadeInScreen from '../../src/components/FadeInScreen';
+import haptics from '../../src/utils/haptics';
 import { colors } from '../../src/theme/colors';
 import { spacing } from '../../src/theme/spacing';
 
@@ -21,65 +23,77 @@ export default function HomeScreen(): React.JSX.Element {
   const { result, status, requestLocation } = useLocation();
 
   return (
-    <ScrollView
-      contentContainerStyle={[styles.container, { minHeight: height }]}
-      style={styles.scroll}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={[styles.card, width > 400 && { maxWidth: 420, alignSelf: 'center' }]}>
-        <Text style={styles.title}>Witaj, {user?.email?.split('@')[0] ?? 'użytkowniku'}</Text>
-        <Text style={styles.subtitle}>Platforma wymiany kryptowalut i walut</Text>
+    <FadeInScreen>
+      <ScrollView
+        contentContainerStyle={[styles.container, { minHeight: height }]}
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={[styles.card, width > 400 && { maxWidth: 420, alignSelf: 'center' }]}>
+          <Text style={styles.title}>Witaj, {user?.email?.split('@')[0] ?? 'użytkowniku'}</Text>
+          <Text style={styles.subtitle}>Platforma wymiany kryptowalut i walut</Text>
 
-        <View style={styles.locationSection}>
-          <View style={styles.locationHeader}>
-            <MaterialCommunityIcons name="map-marker" size={20} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Lokalizacja</Text>
+          <View style={styles.locationSection}>
+            <View style={styles.locationHeader}>
+              <MaterialCommunityIcons name="map-marker" size={20} color={colors.primary} />
+              <Text style={styles.sectionTitle}>Lokalizacja</Text>
+            </View>
+            {status === 'loading' && (
+              <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
+            )}
+            {result?.status === 'granted' && (
+              <Text style={styles.locationText}>
+                {result.latitude.toFixed(4)}, {result.longitude.toFixed(4)}
+              </Text>
+            )}
+            {result?.status === 'denied' && (
+              <Text style={styles.locationDenied}>{result.message}</Text>
+            )}
+            {result?.status === 'error' && (
+              <Text style={styles.locationDenied}>{result.message}</Text>
+            )}
+            <TouchableOpacity
+              style={styles.locationButton}
+              onPress={async () => {
+                await haptics.mediumTap();
+                requestLocation();
+              }}
+              disabled={status === 'loading'}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.locationButtonText}>
+                {status === 'loading' ? 'Pobieranie...' : 'Pobierz moją lokalizację'}
+              </Text>
+            </TouchableOpacity>
           </View>
-          {status === 'loading' && (
-            <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
-          )}
-          {result?.status === 'granted' && (
-            <Text style={styles.locationText}>
-              {result.latitude.toFixed(4)}, {result.longitude.toFixed(4)}
-            </Text>
-          )}
-          {result?.status === 'denied' && (
-            <Text style={styles.locationDenied}>{result.message}</Text>
-          )}
-          {result?.status === 'error' && (
-            <Text style={styles.locationDenied}>{result.message}</Text>
-          )}
-          <TouchableOpacity
-            style={styles.locationButton}
-            onPress={requestLocation}
-            disabled={status === 'loading'}
-          >
-            <Text style={styles.locationButtonText}>
-              {status === 'loading' ? 'Pobieranie...' : 'Pobierz moją lokalizację'}
-            </Text>
-          </TouchableOpacity>
-        </View>
 
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.primaryButton}
-            onPress={() => router.push('/(tabs)/crypto')}
-            activeOpacity={0.85}
-          >
-            <MaterialCommunityIcons name="bitcoin" size={24} color="#fff" />
-            <Text style={styles.primaryButtonText}>Kursy kryptowalut</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.secondaryButton}
-            onPress={() => router.push('/(tabs)/orders')}
-            activeOpacity={0.85}
-          >
-            <MaterialCommunityIcons name="format-list-bulleted" size={24} color={colors.primary} />
-            <Text style={styles.secondaryButtonText}>Moje zamówienia</Text>
-          </TouchableOpacity>
+          <View style={styles.actions}>
+            <TouchableOpacity
+              style={styles.primaryButton}
+              onPress={async () => {
+                await haptics.lightTap();
+                router.push('/(tabs)/crypto');
+              }}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name="bitcoin" size={24} color="#fff" />
+              <Text style={styles.primaryButtonText}>Kursy kryptowalut</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.secondaryButton}
+              onPress={async () => {
+                await haptics.lightTap();
+                router.push('/(tabs)/orders');
+              }}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name="format-list-bulleted" size={24} color={colors.primary} />
+              <Text style={styles.secondaryButtonText}>Moje zamówienia</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </FadeInScreen>
   );
 }
 

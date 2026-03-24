@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api, clearStoredToken, getStoredToken, setStoredToken } from '../../api/client';
 import type { AuthState, LoginCredentials, RegisterCredentials, LoginResponse } from '../../types';
+import haptics from '../../utils/haptics';
 
 const initialState: AuthState = {
   user: null,
@@ -42,6 +43,7 @@ export const login = createAsyncThunk(
       const { token, id, email, roles } = response.data;
       if (!token) return rejectWithValue('Brak tokenu w odpowiedzi');
       await setStoredToken(token);
+      await haptics.success();
       return {
         token,
         user: {
@@ -51,6 +53,7 @@ export const login = createAsyncThunk(
         },
       };
     } catch (err: unknown) {
+      await haptics.error();
       let message = 'Błąd logowania';
       if (err && typeof err === 'object' && 'response' in err) {
         const res = (err as { response?: { data?: unknown } }).response;
@@ -77,8 +80,10 @@ export const register = createAsyncThunk(
   async (credentials: RegisterCredentials, { rejectWithValue }) => {
     try {
       await api.post('/api/auth/signup', credentials);
+      await haptics.success();
       return { message: 'Konto utworzone. Zaloguj się.' };
     } catch (err: unknown) {
+      await haptics.error();
       let message = 'Błąd rejestracji';
       if (err && typeof err === 'object' && 'response' in err) {
         const res = (err as { response?: { data?: unknown } }).response;

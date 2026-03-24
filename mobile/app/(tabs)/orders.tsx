@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   RefreshControl,
   useWindowDimensions,
+  Animated,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../../src/hooks/useRedux';
@@ -29,12 +30,39 @@ function statusStyle(s: OrderStatus): { bg: string; color: string } {
   }
 }
 
-function OrderCard({ item }: { item: OrderDTO }): React.JSX.Element {
+function OrderCard({ item, index }: { item: OrderDTO; index: number }): React.JSX.Element {
   const { bg, color } = statusStyle(item.status);
   const date = item.createdAt ? new Date(item.createdAt).toLocaleDateString('pl-PL') : '—';
+  const opacity = React.useRef(new Animated.Value(0)).current;
+  const translateY = React.useRef(new Animated.Value(12)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 280,
+        delay: index * 60,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 280,
+        delay: index * 60,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [opacity, translateY, index]);
 
   return (
-    <View style={styles.card}>
+    <Animated.View
+      style={[
+        styles.card,
+        {
+          opacity,
+          transform: [{ translateY }],
+        },
+      ]}
+    >
       <View style={styles.cardHeader}>
         <Text style={styles.currencyCode}>{item.currencyCode}</Text>
         <View style={[styles.badge, { backgroundColor: bg }]}>
@@ -55,7 +83,7 @@ function OrderCard({ item }: { item: OrderDTO }): React.JSX.Element {
           <Text style={styles.value}>{date}</Text>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -72,7 +100,10 @@ export default function OrdersScreen(): React.JSX.Element {
     load();
   }, [load]);
 
-  const renderItem = useCallback(({ item }: { item: OrderDTO }) => <OrderCard item={item} />, []);
+  const renderItem = useCallback(
+    ({ item, index }: { item: OrderDTO; index: number }) => <OrderCard item={item} index={index} />,
+    []
+  );
   const keyExtractor = useCallback((item: OrderDTO) => String(item.id), []);
 
   if (error && myOrders.length === 0) {
