@@ -51,22 +51,22 @@ docker compose up
    npm install
    ```
 
-3. Opcjonalnie — adres API: skopiuj `mobile/.env.example` do `mobile/.env` i ustaw:
+3. Ustaw adres API w `mobile/.env`, kopiując `mobile/.env.example`:
    - **Przeglądarka (web):** `EXPO_PUBLIC_API_URL=http://localhost:8081`
    - **Emulator Android:** `EXPO_PUBLIC_API_URL=http://10.0.2.2:8081`
    - **Urządzenie w sieci:** `EXPO_PUBLIC_API_URL=http://IP_KOMPUTERA:8081`
 
-4. Uruchom Expo:
+4. Uruchom Expo dla aplikacji mobilnej na osobnym porcie, aby nie konfliktował z backendem:
 
    ```bash
-   npx expo start
+   npx expo start --port 8082 -c
    ```
 
 5. **Wersja mobilna (nie web):**
    - **Android:** w terminalu naciśnij **a** (otwiera emulator, jeśli jest Android SDK i ANDROID_HOME) lub zeskanuj QR kod aplikacją **Expo Go** na telefonie.  
-   - **iOS:** zeskanuj QR w aplikacji **Expo Go** (Mac z Xcode) lub na urządzeniu.  
+   - **iOS:** zeskanuj QR w aplikacji **Expo Go** na urządzeniu.  
 
-Jeśli przy **a** pojawi się błąd „Android SDK path” / „adb”: zainstaluj Android Studio, skonfiguruj emulator i ustaw zmienną `ANDROID_HOME` (np. `C:\Users\TwojaNazwa\AppData\Local\Android\Sdk`).  
+Jeśli przy **a** pojawi się błąd „Android SDK path” / „adb”: zainstaluj Android Studio, skonfiguruj emulator i ustaw zmienną `ANDROID_HOME` (np. `C:\\Users\\TwojaNazwa\\AppData\\Local\\Android\\Sdk`).  
 
 ### Budowanie APK (EAS Build)
 
@@ -77,7 +77,7 @@ eas login
 eas build --platform android --profile preview
 ```
 
-APK pobierzesz z panelu Expo. Własna ikona/splash: pliki w `mobile/assets/` (np. `icon.png` 1024×1024) — [dokumentacja Expo](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/).  
+APK pobierzesz z panelu Expo. Własna ikona/splash: pliki w `mobile/assets/` (np. `icon.png` 1024×1024) — [dokumentacja Expo](https://docs.expo.dev/develop/user-interface/splash-screen-and-app-icon/).
 
 ## Struktura projektu
 
@@ -106,6 +106,7 @@ ProjectAPI1.1/
 
 - Frontend (nginx): 80  
 - Backend: 8081  
+- Expo / Metro dla aplikacji mobilnej: 8082
 - PostgreSQL: 5432  
 
 ## Testowanie API (curl)
@@ -126,14 +127,16 @@ curl -X GET http://localhost:8081/api/crypto -H "Authorization: Bearer <token>"
 - **Kontenery nie startują:** sprawdź porty 80, 8081, 5432; `docker compose down && docker compose up`.  
 - **Backend nie łączy się z DB:** `docker compose logs postgres` — kontener musi być „healthy”.  
 - **Frontend nie łączy z backendem:** sprawdź `frontend/nginx.conf` i logi `docker compose logs frontend`.  
-- **Aplikacja mobilna — „Brak połączenia z serwerem”:** backend musi działać; dla emulatora Android ustaw w `mobile/.env`: `EXPO_PUBLIC_API_URL=http://10.0.2.2:8081`.  
+- **Aplikacja mobilna — „Brak połączenia z serwerem”:** backend musi działać; dla emulatora Android ustaw w `mobile/.env`: `EXPO_PUBLIC_API_URL=http://10.0.2.2:8081`. Dla iPhone/telefonu w Wi‑Fi ustaw `EXPO_PUBLIC_API_URL=http://IP_KOMPUTERA:8081`. Expo uruchamiaj na osobnym porcie: `npx expo start --port 8082 -c`.  
 - **„Android SDK path” / „adb”:** zainstaluj Android Studio, ustaw `ANDROID_HOME` na katalog SDK.  
+- **403 w Expo Go na telefonie:** sprawdź, czy Expo nie koliduje z backendem na tym samym porcie. Backend zostaje na `8081`, a Expo uruchamiaj na `8082` (`npx expo start --port 8082 -c`).  
+- **UX w aplikacji mobilnej:** wprowadzono haptic feedback oraz lekkie animacje fade-in / press-scale na kluczowych ekranach, aby poprawić responsywność i komfort użycia.
 
 ## Technologie
 
 - **Backend:** Spring Boot, Security (JWT), Data JPA, PostgreSQL, Flyway, Lombok  
 - **Frontend:** React, TypeScript, MUI, Redux Toolkit, React Router, Axios, Vite  
-- **Mobile:** Expo, Expo Router, Redux Toolkit, React Native Paper, SecureStore (native) / AsyncStorage (web), expo-location, NetInfo, Jest  
+- **Mobile:** Expo, Expo Router, Redux Toolkit, React Native Paper, SecureStore (native) / AsyncStorage (web), expo-location, NetInfo, Jest, expo-haptics, Animated  
 - **Infrastruktura:** Docker, PostgreSQL, Nginx, Gradle, npm  
 
 
@@ -173,7 +176,7 @@ curl -X GET http://localhost:8081/api/crypto -H "Authorization: Bearer <token>"
 | **A. Backend i baza danych** | Zrealizowane — aplikacja łączy się z własnym backendem (Spring Boot + PostgreSQL), dane trwałe po reinstalacji, CRUD ze stanami loading/error. |
 | **B. Autoryzacja** | Częściowo — rejestracja i logowanie (email + hasło), token w SecureStore, ekrany chronione, auto-login po restarcie. **Do dopracowania:** druga metoda logowania (np. Google lub Apple). |
 | **C. Integracja z zewnętrznym API** | Zrealizowane — backend korzysta z CoinMarketCap i CurrencyFreaks; aplikacja mobilna korzysta z tego API przez backend; loading/error obsłużone; klucze API w zmiennych środowiskowych po stronie backendu. |
-| **D. Zaawansowany UX** (min. 2 z: animacje, gesty, offline sync, haptic feedback) | **Oczekuje do pracy** — można dodać np. Expo Haptics przy zapisie/usunięciu, animacje (Reanimated/Lottie) lub gesty (Gesture Handler), ewentualnie synchronizację offline→online. |
+| **D. Zaawansowany UX** (min. 2 z: animacje, gesty, offline sync, haptic feedback) | **Zrealizowane w dużej części** — dodano haptic feedback, fade-in/press-scale animacje na kluczowych ekranach i subtelne animacje interakcji. Do ewentualnego rozwinięcia: dodatkowe gesty lub bardziej rozbudowane animacje. |
 
 ---
 

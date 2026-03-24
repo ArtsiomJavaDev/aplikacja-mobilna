@@ -32,12 +32,12 @@ W drugim:
 
 ```bash
 cd mobile
-npx expo start
+npx expo start --port 8082
 ```
 
 Gdy Expo się uruchomi, naciśnij **a** (Android) — aplikacja otworzy się w emulatorze i połączy z backendem.
 
-Po zmianie `.env` uruchom ponownie: `npx expo start -c`.
+Po zmianie `.env` uruchom ponownie: `npx expo start --port 8082 -c`.
 
 ---
 
@@ -82,7 +82,7 @@ Po każdej zmianie `.env`:
 
 ```bash
 cd mobile
-npx expo start -c
+npx expo start --port 8082 -c
 ```
 
 I ponownie otwórz aplikację na telefonie (skanuj QR z Expo).

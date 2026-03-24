@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { api } from '../../api/client';
 import { offlineCache } from '../../cache/offlineCache';
 import type { OrderDTO, CreateOrderRequest } from '../../types';
+import haptics from '../../utils/haptics';
 
 interface OrdersState {
   myOrders: OrderDTO[];
@@ -40,8 +41,10 @@ export const createOrder = createAsyncThunk(
   async (body: CreateOrderRequest, { rejectWithValue }) => {
     try {
       const { data } = await api.post<OrderDTO>('/api/orders', body);
+      await haptics.success();
       return data;
     } catch (e) {
+      await haptics.error();
       return rejectWithValue(e instanceof Error ? e.message : 'Błąd tworzenia zamówienia');
     }
   }
