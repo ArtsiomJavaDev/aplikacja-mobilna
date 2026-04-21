@@ -48,6 +48,8 @@ public class SecurityConfigurator {
                 .requestMatchers("/api/auth/signin", "/api/auth/signup").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/api/currencies", "/api/currencies/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/news", "/api/news/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/news/refresh").authenticated()
                 .requestMatchers("/api/crypto", "/api/crypto/**").authenticated()
                 .requestMatchers("/api/orders/*/pay").authenticated()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")

@@ -71,3 +71,14 @@ export interface CurrencyItem {
   name: string;
   currentPrice: number;
 }
+
+export interface NewsItem {
+  id: string;
+  title: string;
+  summary: string;
+  source: string;
+  url: string;
+  imageUrl?: string | null;
+  publishedAt: string;
+  tags: string[];
+}
