@@ -44,6 +44,7 @@ public class SecurityConfigurator {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers("/auth/**").permitAll()
                 .requestMatchers("/api/auth/signin", "/api/auth/signup").permitAll()
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/api/currencies", "/api/currencies/**").permitAll()
@@ -101,4 +102,4 @@ public class SecurityConfigurator {
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-} 
+}

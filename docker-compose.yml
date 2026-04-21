@@ -35,7 +35,6 @@ services:
       SPRING_JPA_SHOW_SQL: "false"
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       SPRING_WEB_CORS_ALLOWED_ORIGINS: http://localhost
-      # Klucze ustaw w .env (skopiuj z .env.example) — nigdy nie commituj prawdziwych wartości
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-604800000}
       TESTING_APP_SECRET: ${TESTING_APP_SECRET}
@@ -43,6 +42,9 @@ services:
       COINMARKETCAP_API_URL: ${COINMARKETCAP_API_URL:-https://pro-api.coinmarketcap.com/v1}
       COINMARKETCAP_API_KEY: ${COINMARKETCAP_API_KEY:-CHANGE_ME}
       CRYPTO_SELL_DISCOUNT_PERCENT: 15
+      # News feature
+      NEWSAPI_KEY: ${NEWSAPI_KEY:-CHANGE_ME}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-CHANGE_ME}
     ports:
       - "0.0.0.0:8081:8081"
     depends_on:
