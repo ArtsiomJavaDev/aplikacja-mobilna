@@ -95,7 +95,6 @@ const AdminPanel: React.FC = () => {
       const response = await axiosInstance.get<Order[]>('/api/admin/active-orders');
       setOrders(response.data);
     } catch (err: any) {
-      console.error('Error fetching active orders:', err);
       setError(err.response?.data?.message || 'Błąd podczas ładowania aktywnych zamówień');
     } finally {
       setLoading(false);
@@ -110,7 +109,6 @@ const AdminPanel: React.FC = () => {
       });
       await fetchActiveOrders();
     } catch (err: any) {
-      console.error('Error updating order status:', err);
       setError(err.response?.data?.message || 'Błąd podczas aktualizacji statusu zamówienia');
     } finally {
       setUpdating(null);
@@ -127,7 +125,6 @@ const AdminPanel: React.FC = () => {
       await axiosInstance.post(`/api/admin/orders/${orderId}/collect`);
       await fetchActiveOrders();
     } catch (err: any) {
-      console.error('Error marking order as collected:', err);
       setError(err.response?.data?.message || 'Błąd podczas oznaczania zamówienia jako odebrane');
     }
   };
@@ -146,7 +143,7 @@ const AdminPanel: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
         <Typography variant="h5" component="h2">
           Panel administratora
         </Typography>
@@ -155,6 +152,11 @@ const AdminPanel: React.FC = () => {
             variant="outlined"
             component={Link}
             to="/admin/history"
+            sx={{
+              borderRadius: 2,
+              transition: 'transform 0.2s ease',
+              '&:hover': { transform: 'translateY(-1px)' },
+            }}
           >
             Historia zamówień
           </Button>
@@ -163,6 +165,11 @@ const AdminPanel: React.FC = () => {
             color="primary"
             onClick={fetchActiveOrders}
             startIcon={<RefreshIcon />}
+            sx={{
+              borderRadius: 2,
+              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+              '&:hover': { transform: 'translateY(-1px)', boxShadow: 4 },
+            }}
           >
             Odśwież
           </Button>
@@ -170,7 +177,7 @@ const AdminPanel: React.FC = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
           {error}
         </Alert>
       )}
@@ -185,9 +192,17 @@ const AdminPanel: React.FC = () => {
             Aktywne zamówienia ({orders.length})
           </Typography>
           
-          <TableContainer component={Paper}>
+          <TableContainer
+            component={Paper}
+            sx={{
+              borderRadius: 3,
+              overflow: 'hidden',
+              transition: 'box-shadow 0.2s ease',
+              '&:hover': { boxShadow: 6 },
+            }}
+          >
             <Table>
-              <TableHead>
+              <TableHead sx={{ backgroundColor: 'rgba(25, 118, 210, 0.06)' }}>
                 <TableRow>
                   <TableCell>ID</TableCell>
                   <TableCell>Użytkownik</TableCell>
@@ -201,7 +216,11 @@ const AdminPanel: React.FC = () => {
               </TableHead>
               <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow
+                    key={order.id}
+                    hover
+                    sx={{ '&:last-child td, &:last-child th': { borderBottom: 0 } }}
+                  >
                     <TableCell>{order.id}</TableCell>
                     <TableCell>{order.userEmail}</TableCell>
                     <TableCell>{order.currencyCode || order.currency?.code}</TableCell>

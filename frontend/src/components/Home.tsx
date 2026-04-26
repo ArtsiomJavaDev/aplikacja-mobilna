@@ -29,7 +29,14 @@ const Home: React.FC = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ mb: 4 }}>
+      <AppBar
+        position="static"
+        sx={{
+          mb: 4,
+          background: 'linear-gradient(90deg, #1976d2 0%, #1565c0 100%)',
+          boxShadow: 3,
+        }}
+      >
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Kantor Wymiany Walut
@@ -53,7 +60,16 @@ const Home: React.FC = () => {
                 variant="contained"
                 color="primary"
                 size="large"
-                sx={{ fontWeight: 'bold', fontSize: 16, flex: 1 }}
+                sx={{
+                  fontWeight: 'bold',
+                  fontSize: 16,
+                  flex: 1,
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                  '&:hover': {
+                    transform: 'translateY(-1px)',
+                    boxShadow: 4,
+                  },
+                }}
                 onClick={() => navigate('/orders')}
               >
                 📋 Moje zamówienia
@@ -67,8 +83,11 @@ const Home: React.FC = () => {
                   fontSize: 16, 
                   flex: 1,
                   backgroundColor: '#ff9800',
+                  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
                   '&:hover': {
-                    backgroundColor: '#f57c00'
+                    backgroundColor: '#f57c00',
+                    transform: 'translateY(-1px)',
+                    boxShadow: 4,
                   }
                 }}
                 onClick={() => navigate('/crypto')}
@@ -81,7 +100,12 @@ const Home: React.FC = () => {
           {user?.role === 'ROLE_ADMIN' ? (
             <Paper 
               elevation={3} 
-              sx={{ p: 3 }}
+              sx={{
+                p: 3,
+                borderRadius: 3,
+                transition: 'box-shadow 0.2s ease',
+                '&:hover': { boxShadow: 6 },
+              }}
             >
               <AdminPanel />
             </Paper>
@@ -91,7 +115,10 @@ const Home: React.FC = () => {
                 elevation={3} 
                 sx={{ 
                   p: 3, 
-                  flex: { md: 2 }
+                  flex: { md: 2 },
+                  borderRadius: 3,
+                  transition: 'box-shadow 0.2s ease',
+                  '&:hover': { boxShadow: 6 },
                 }}
               >
                 <CurrencyList />
@@ -101,7 +128,10 @@ const Home: React.FC = () => {
                 elevation={3} 
                 sx={{ 
                   p: 3, 
-                  flex: { md: 1 }
+                  flex: { md: 1 },
+                  borderRadius: 3,
+                  transition: 'box-shadow 0.2s ease',
+                  '&:hover': { boxShadow: 6 },
                 }}
               >
                 <Cart />

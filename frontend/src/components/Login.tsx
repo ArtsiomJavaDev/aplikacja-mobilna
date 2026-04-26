@@ -7,10 +7,11 @@ import {
   Button,
   Box,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Grow,
 } from '@mui/material';
 import { useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { login } from '../store/slices/authSlice';
 import type { RootState } from '../store';
 import { useAppDispatch } from '../hooks/useAppDispatch';
@@ -20,18 +21,28 @@ import { handleApiError } from '../utils/errorHandler';
 const Login: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { loading, isAuthenticated } = useSelector((state: RootState) => state.auth);
   const [formData, setFormData] = useState<LoginCredentials>({
     email: '',
     password: '',
   });
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(
+    (location.state as { registrationSuccess?: string } | null)?.registrationSuccess ?? null
+  );
 
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/', { replace: true });
     }
   }, [isAuthenticated, navigate]);
+
+  useEffect(() => {
+    if (successMessage && location.state) {
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [successMessage, location.pathname, location.state, navigate]);
 
   const validateForm = () => {
     if (!formData.email.trim()) {
@@ -71,7 +82,7 @@ const Login: React.FC = () => {
       ...prev,
       [name]: value,
     }));
-    setValidationError(null); // Resetowanie błędu przy zmianie pola
+    setValidationError(null);
   };
 
   return (
@@ -84,12 +95,26 @@ const Login: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
+        <Grow in timeout={350}>
+          <Paper
+            elevation={6}
+            sx={{
+              p: 4,
+              width: '100%',
+              borderRadius: 3,
+              backdropFilter: 'blur(2px)',
+            }}
+          >
           <Typography component="h1" variant="h5" align="center" gutterBottom>
             Logowanie
           </Typography>
           
           <form onSubmit={handleSubmit}>
+            {successMessage && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                {successMessage}
+              </Alert>
+            )}
             <TextField
               margin="normal"
               required
@@ -127,7 +152,13 @@ const Login: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{
+                mt: 3,
+                mb: 2,
+                py: 1.2,
+                transition: 'transform 0.2s ease',
+                '&:hover': { transform: 'translateY(-1px)' },
+              }}
               disabled={loading}
             >
               {loading ? (
@@ -140,13 +171,14 @@ const Login: React.FC = () => {
               component={Link}
               to="/register"
               fullWidth
-              sx={{ textAlign: 'center' }}
+              sx={{ textAlign: 'center', opacity: 0.9 }}
               disabled={loading}
             >
               Nie masz konta? Zarejestruj się
             </Button>
           </form>
-        </Paper>
+          </Paper>
+        </Grow>
       </Box>
     </Container>
   );

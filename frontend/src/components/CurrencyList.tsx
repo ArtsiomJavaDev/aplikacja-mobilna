@@ -54,7 +54,14 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ currency, onAddToCart }) =>
   };
 
   return (
-    <Card>
+    <Card
+      sx={{
+        height: '100%',
+        borderRadius: 3,
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        '&:hover': { transform: 'translateY(-2px)', boxShadow: 6 },
+      }}
+    >
       <CardContent>
         <Typography variant="h6" gutterBottom>
           {currency.name} ({currency.code})
@@ -83,6 +90,11 @@ const CurrencyCard: React.FC<CurrencyCardProps> = ({ currency, onAddToCart }) =>
             variant="contained"
             onClick={handleAddToCart}
             disabled={!amount || parseFloat(amount) <= 0}
+            sx={{
+              borderRadius: 2,
+              transition: 'transform 0.2s ease',
+              '&:hover': { transform: 'translateY(-1px)' },
+            }}
           >
             Dodaj do koszyka
           </Button>
@@ -105,10 +117,8 @@ const CurrencyList: React.FC = () => {
         setLoading(true);
         setError(null);
         const response = await axiosInstance.get<Currency[]>('/api/currencies');
-        console.log('Loaded currencies:', response.data);
         setCurrencies(response.data);
       } catch (err: any) {
-        console.error('Error loading currencies:', err);
         setError(err.response?.data?.message || 'Błąd podczas ładowania walut');
       } finally {
         setLoading(false);
@@ -119,7 +129,6 @@ const CurrencyList: React.FC = () => {
   }, []);
 
   const handleAddToCart = (currency: Currency, amount: number, rate: number) => {
-    console.log('Adding to cart:', { currency, amount, rate });
     const cartItem = {
       currencyId: currency.id,
       code: currency.code,
@@ -127,7 +136,6 @@ const CurrencyList: React.FC = () => {
       rate,
       total: amount * rate,
     };
-    console.log('Cart item to add:', cartItem);
     dispatch(addToCart(cartItem));
   };
 
@@ -149,7 +157,7 @@ const CurrencyList: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h5" component="h2" gutterBottom>
+      <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 1 }}>
         Dostępne waluty
       </Typography>
       
@@ -163,9 +171,13 @@ const CurrencyList: React.FC = () => {
           py: 2, 
           fontSize: '18px', 
           fontWeight: 'bold',
+          borderRadius: 2,
           backgroundColor: '#2e7d32',
+          transition: 'transform 0.2s ease, box-shadow 0.2s ease',
           '&:hover': {
-            backgroundColor: '#1b5e20'
+            backgroundColor: '#1b5e20',
+            transform: 'translateY(-1px)',
+            boxShadow: 4,
           }
         }}
         onClick={() => navigate('/orders')}

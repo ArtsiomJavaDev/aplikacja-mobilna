@@ -16,7 +16,6 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../store/slices/cartSlice';
 import axiosInstance from '../api/axios';
 import type { RootState } from '../store';
-import { useNavigate } from 'react-router-dom';
 
 interface Crypto {
   id: string;
@@ -44,7 +43,14 @@ const CryptoCard: React.FC<CryptoCardProps> = ({ crypto, onSell }) => {
   };
 
   return (
-    <Card sx={{ height: '100%' }}>
+    <Card
+      sx={{
+        height: '100%',
+        borderRadius: 3,
+        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+        '&:hover': { transform: 'translateY(-2px)', boxShadow: 6 },
+      }}
+    >
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
           <Typography variant="h6" gutterBottom>
@@ -84,7 +90,12 @@ const CryptoCard: React.FC<CryptoCardProps> = ({ crypto, onSell }) => {
             color="success"
             onClick={handleSell}
             disabled={!amount || parseFloat(amount) <= 0}
-            sx={{ minWidth: '120px' }}
+            sx={{
+              minWidth: '120px',
+              borderRadius: 2,
+              transition: 'transform 0.2s ease',
+              '&:hover': { transform: 'translateY(-1px)' },
+            }}
           >
             Sprzedaj nam
           </Button>
@@ -96,7 +107,6 @@ const CryptoCard: React.FC<CryptoCardProps> = ({ crypto, onSell }) => {
 
 const CryptoList: React.FC = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const [cryptos, setCryptos] = useState<Crypto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,12 +116,9 @@ const CryptoList: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('Pobieranie kryptowalut...');
         const response = await axiosInstance.get<Crypto[]>('/api/crypto');
-        console.log('Otrzymano kryptowaluty:', response.data);
         setCryptos(response.data);
       } catch (err: any) {
-        console.error('Błąd ładowania kryptowalut:', err);
         const errorMessage = err.response?.data?.message || err.message || 'Błąd podczas ładowania kryptowalut';
         setError(errorMessage);
       } finally {
@@ -123,7 +130,6 @@ const CryptoList: React.FC = () => {
   }, []);
 
   const handleSellCrypto = (crypto: Crypto, amount: number) => {
-    console.log('Selling crypto:', { crypto, amount });
     const symbolHash = crypto.symbol.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
     const cartItem = {
       currencyId: symbolHash,
@@ -132,7 +138,6 @@ const CryptoList: React.FC = () => {
       rate: crypto.sellPrice,
       total: amount * crypto.sellPrice
     };
-    console.log('Cart item to add:', cartItem);
     dispatch(addToCart(cartItem));
   };
 
@@ -154,11 +159,11 @@ const CryptoList: React.FC = () => {
 
   return (
     <Box>
-      <Typography variant="h5" component="h2" gutterBottom>
+      <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 1 }}>
         Skupujemy kryptowaluty
       </Typography>
 
-      <Alert severity="info" sx={{ mb: 3 }}>
+      <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
         💰 Sprzedaj nam swoje kryptowaluty! Płacimy 85% ceny rynkowej.
       </Alert>
 

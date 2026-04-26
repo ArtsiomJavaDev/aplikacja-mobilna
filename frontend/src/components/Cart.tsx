@@ -47,20 +47,16 @@ const Cart: React.FC = () => {
       setIsProcessing(true);
       setError(null);
 
-      console.log('Creating orders for items:', items);
-
       // Создаем массив заказов для каждой waluzy w koszyku
       const orderPromises = items.map(item => {
         const orderData = {
           currencyCode: item.code,
           amount: item.amount
         };
-        console.log('Creating order with data:', orderData);
         return axiosInstance.post('/api/orders', orderData);
       });
 
-      const results = await Promise.all(orderPromises);
-      console.log('Order creation results:', results);
+      await Promise.all(orderPromises);
       
       // Очищаем koszyk po pomyślnym utworzeniu zamówień
       dispatch(clearCart());
@@ -69,7 +65,6 @@ const Cart: React.FC = () => {
       // Przekierowujemy na stronę zamówień
       navigate('/orders');
     } catch (err: any) {
-      console.error('Error creating order:', err);
       setError(err.response?.data?.message || 'Błąd podczas tworzenia zamówienia');
     } finally {
       setIsProcessing(false);
@@ -91,7 +86,11 @@ const Cart: React.FC = () => {
           flexDirection: 'column', 
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '200px'
+          minHeight: '200px',
+          borderRadius: 3,
+          p: 3,
+          bgcolor: 'background.paper',
+          boxShadow: 2,
         }}>
           <ShoppingCartIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 2 }} />
           <Typography variant="body1" color="text.secondary">
@@ -120,12 +119,12 @@ const Cart: React.FC = () => {
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
           {error}
         </Alert>
       )}
 
-      <List>
+      <List sx={{ borderRadius: 3, bgcolor: 'background.paper', boxShadow: 2, px: 1 }}>
         {items.map((item, index) => (
           <React.Fragment key={item.currencyId}>
             <ListItem
@@ -134,6 +133,7 @@ const Cart: React.FC = () => {
                   edge="end" 
                   aria-label="delete"
                   onClick={() => handleRemoveItem(item.currencyId)}
+                  sx={{ transition: 'transform 0.2s ease', '&:hover': { transform: 'scale(1.05)' } }}
                 >
                   <DeleteIcon />
                 </IconButton>
@@ -171,6 +171,11 @@ const Cart: React.FC = () => {
           size="large"
           onClick={() => setIsOrderDialogOpen(true)}
           disabled={isProcessing}
+          sx={{
+            borderRadius: 2,
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+            '&:hover': { transform: 'translateY(-1px)', boxShadow: 4 },
+          }}
         >
           Złóż zamówienie
         </Button>

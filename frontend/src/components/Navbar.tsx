@@ -30,7 +30,13 @@ const Navbar: React.FC = () => {
 
   if (!isAuthenticated) {
     return (
-      <AppBar position="static">
+      <AppBar
+        position="static"
+        sx={{
+          background: 'linear-gradient(90deg, #1976d2 0%, #1565c0 100%)',
+          boxShadow: 3,
+        }}
+      >
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Kantor Wymiany Walut
@@ -47,7 +53,13 @@ const Navbar: React.FC = () => {
   }
 
   return (
-    <AppBar position="static">
+    <AppBar
+      position="static"
+      sx={{
+        background: 'linear-gradient(90deg, #1976d2 0%, #1565c0 100%)',
+        boxShadow: 3,
+      }}
+    >
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           <Link component={RouterLink} to="/" color="inherit" underline="none">
@@ -62,7 +74,15 @@ const Navbar: React.FC = () => {
             </Button>
           )}
           
-          <Button color="inherit" component={RouterLink} to="/crypto">
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/crypto"
+            sx={{
+              transition: 'transform 0.2s ease',
+              '&:hover': { transform: 'translateY(-1px)' },
+            }}
+          >
             💰 Sprzedaj Krypto
           </Button>
           
@@ -73,9 +93,11 @@ const Navbar: React.FC = () => {
             sx={{ 
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
               '&:hover': {
-                backgroundColor: 'rgba(255, 255, 255, 0.2)'
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                transform: 'translateY(-1px)',
               },
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              transition: 'all 0.2s ease',
             }}
             startIcon={<ListAltIcon />}
           >

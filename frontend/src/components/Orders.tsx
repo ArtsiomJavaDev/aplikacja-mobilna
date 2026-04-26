@@ -142,7 +142,7 @@ const Orders: React.FC = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2.5 }}>
         <Typography variant="h5" component="h2">
           {isAdmin ? 'Wszystkie zamówienia' : 'Moje zamówienia'}
         </Typography>
@@ -151,14 +151,27 @@ const Orders: React.FC = () => {
           color="primary"
           onClick={fetchOrders}
           startIcon={<RefreshIcon />}
+          sx={{
+            borderRadius: 2,
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+            '&:hover': { transform: 'translateY(-1px)', boxShadow: 4 },
+          }}
         >
           Odśwież
         </Button>
       </Box>
 
-      <TableContainer component={Paper}>
+      <TableContainer
+        component={Paper}
+        sx={{
+          borderRadius: 3,
+          overflow: 'hidden',
+          transition: 'box-shadow 0.2s ease',
+          '&:hover': { boxShadow: 6 },
+        }}
+      >
         <Table>
-          <TableHead>
+          <TableHead sx={{ backgroundColor: 'rgba(25, 118, 210, 0.06)' }}>
             <TableRow>
               <TableCell>ID</TableCell>
               {isAdmin && <TableCell>Użytkownik</TableCell>}
@@ -171,7 +184,13 @@ const Orders: React.FC = () => {
           </TableHead>
           <TableBody>
             {orders.map((order) => (
-              <TableRow key={order.id}>
+              <TableRow
+                key={order.id}
+                hover
+                sx={{
+                  '&:last-child td, &:last-child th': { borderBottom: 0 },
+                }}
+              >
                 <TableCell>{order.id}</TableCell>
                 {isAdmin && <TableCell>{order.userEmail}</TableCell>}
                 <TableCell>{order.currencyCode}</TableCell>

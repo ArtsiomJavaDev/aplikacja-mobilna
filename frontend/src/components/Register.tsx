@@ -8,7 +8,8 @@ import {
   Button,
   Box,
   Alert,
-  CircularProgress
+  CircularProgress,
+  Grow,
 } from '@mui/material';
 import { useSelector } from 'react-redux';
 import { register } from '../store/slices/authSlice';
@@ -28,6 +29,7 @@ const Register: React.FC = () => {
   });
   const [validationError, setValidationError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -71,15 +73,20 @@ const Register: React.FC = () => {
       const result = await dispatch(register(formData)).unwrap();
       setSuccessMessage(result.message);
       setValidationError(null);
-      
-      // Przekierowanie na stronę logowania po 2 sekundach
+      setIsRedirecting(true);
+
+      // Przekierowanie na stronę logowania po krótkim komunikacie sukcesu
       setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+        navigate('/login', {
+          replace: true,
+          state: { registrationSuccess: 'Konto zostało utworzone. Zaloguj się.' },
+        });
+      }, 1200);
     } catch (err) {
       const errorMessage = handleApiError(err);
       setValidationError(errorMessage);
       setSuccessMessage(null);
+      setIsRedirecting(false);
     }
   };
 
@@ -103,7 +110,16 @@ const Register: React.FC = () => {
           alignItems: 'center',
         }}
       >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
+        <Grow in timeout={350}>
+          <Paper
+            elevation={6}
+            sx={{
+              p: 4,
+              width: '100%',
+              borderRadius: 3,
+              backdropFilter: 'blur(2px)',
+            }}
+          >
           <Typography component="h1" variant="h5" align="center" gutterBottom>
             Rejestracja
           </Typography>
@@ -165,12 +181,18 @@ const Register: React.FC = () => {
               type="submit"
               fullWidth
               variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              sx={{
+                mt: 3,
+                mb: 2,
+                py: 1.2,
+                transition: 'transform 0.2s ease',
+                '&:hover': { transform: 'translateY(-1px)' },
+              }}
               disabled={loading || !!successMessage}
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
-              ) : successMessage ? (
+              ) : isRedirecting ? (
                 'Przekierowywanie...'
               ) : (
                 'Zarejestruj się'
@@ -180,13 +202,14 @@ const Register: React.FC = () => {
               component={Link}
               to="/login"
               fullWidth
-              sx={{ textAlign: 'center' }}
+              sx={{ textAlign: 'center', opacity: 0.9 }}
               disabled={loading || !!successMessage}
             >
               Masz już konto? Zaloguj się
             </Button>
           </form>
-        </Paper>
+          </Paper>
+        </Grow>
       </Box>
     </Container>
   );
