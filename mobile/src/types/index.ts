@@ -37,6 +37,7 @@ export interface CryptoItem {
   name: string;
   marketPrice: number;
   sellPrice: number;
+  priceChangePercent24h: number;
 }
 
 export interface OrderDTO {

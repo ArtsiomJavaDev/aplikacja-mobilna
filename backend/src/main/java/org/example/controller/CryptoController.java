@@ -19,12 +19,6 @@ import java.util.ArrayList;
 public class CryptoController {
     private static final Logger logger = LoggerFactory.getLogger(CryptoController.class);
     
-    @Value("${coinmarketcap.api.url}")
-    private String coinMarketCapApiUrl;
-    
-    @Value("${coinmarketcap.api.key}")
-    private String coinMarketCapApiKey;
-    
     @Value("${crypto.sell.discount.percent}")
     private double sellDiscountPercent;
 
@@ -42,43 +36,28 @@ public class CryptoController {
 
     @GetMapping
     public ResponseEntity<List<CryptoResponse>> getAllCryptos() {
-        logger.info("Fetching cryptocurrency prices from CoinMarketCap API");
+        logger.info("Fetching cryptocurrency prices from Binance API (24hr ticker)");
         List<CryptoResponse> cryptos = new ArrayList<>();
         
         try {
-            // Create headers with API key
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-CMC_PRO_API_KEY", coinMarketCapApiKey);
-            headers.set("Accept", "application/json");
-            
-            // Create HTTP entity with headers
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            
-            // Build URL with parameters
-            String url = coinMarketCapApiUrl + "/cryptocurrency/listings/latest?start=1&limit=100&convert=USD";
+            String url = "https://api.binance.com/api/v3/ticker/24hr?symbols=[\"BTCUSDT\",\"ETHUSDT\",\"BNBUSDT\",\"ADAUSDT\",\"SOLUSDT\",\"DOTUSDT\",\"LINKUSDT\",\"LTCUSDT\"]";
             
             RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<String> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                String.class
-            );
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             
-            logger.debug("CoinMarketCap response: {}", response.getBody());
+            logger.debug("Binance response: {}", response.getBody());
             
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(response.getBody());
             
-            if (!root.has("data")) {
-                logger.error("CoinMarketCap response does not contain data");
+            if (!root.isArray()) {
+                logger.error("Binance response is not an array");
                 return getStaticCryptos();
             }
             
-            JsonNode data = root.get("data");
-            
             for (CryptoInfo cryptoInfo : SUPPORTED_CRYPTOS) {
-                CryptoResponse crypto = findCryptoInResponse(data, cryptoInfo);
+                String binanceSymbol = cryptoInfo.getSymbol() + "USDT";
+                CryptoResponse crypto = findCryptoInBinanceResponse(root, cryptoInfo, binanceSymbol);
                 if (crypto != null) {
                     cryptos.add(crypto);
                 } else {
@@ -88,12 +67,13 @@ public class CryptoController {
                         cryptoInfo.getSymbol(),
                         cryptoInfo.getName(),
                         getDefaultPrice(cryptoInfo.getSymbol()),
-                        calculateSellPrice(getDefaultPrice(cryptoInfo.getSymbol()))
+                        calculateSellPrice(getDefaultPrice(cryptoInfo.getSymbol())),
+                        0.0
                     ));
                 }
             }
         } catch (Exception e) {
-            logger.error("Error fetching from CoinMarketCap: {}", e.getMessage());
+            logger.error("Error fetching from Binance: {}", e.getMessage());
             return getStaticCryptos();
         }
         
@@ -103,41 +83,31 @@ public class CryptoController {
 
     @GetMapping("/{symbol}/price")
     public ResponseEntity<CryptoPriceResponse> getCryptoPrice(@PathVariable String symbol) {
-        logger.info("Fetching price for cryptocurrency: {}", symbol);
+        logger.info("Fetching 24hr ticker for cryptocurrency: {}", symbol);
         
         try {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-CMC_PRO_API_KEY", coinMarketCapApiKey);
-            headers.set("Accept", "application/json");
-            
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            
-            String url = coinMarketCapApiUrl + "/cryptocurrency/quotes/latest?symbol=" + symbol.toUpperCase() + "&convert=USD";
+            String url = "https://api.binance.com/api/v3/ticker/24hr?symbol=" + symbol.toUpperCase() + "USDT";
             
             RestTemplate restTemplate = new RestTemplate();
-            ResponseEntity<String> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                String.class
-            );
+            ResponseEntity<String> response = restTemplate.getForEntity(url, String.class);
             
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(response.getBody());
             
-            if (!root.has("data") || root.get("data").size() == 0) {
+            if (!root.has("lastPrice")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
             
-            JsonNode data = root.get("data").get(symbol.toUpperCase());
-            double marketPrice = data.get("quote").get("USD").get("price").asDouble();
+            double marketPrice = root.get("lastPrice").asDouble();
             double sellPrice = calculateSellPrice(marketPrice);
+            double priceChangePercent24h = root.has("priceChangePercent") ? root.get("priceChangePercent").asDouble() : 0.0;
             
             CryptoPriceResponse priceResponse = new CryptoPriceResponse(
                 symbol.toUpperCase(),
                 marketPrice,
                 sellPrice,
-                sellDiscountPercent
+                sellDiscountPercent,
+                priceChangePercent24h
             );
             
             return ResponseEntity.ok(priceResponse);
@@ -147,19 +117,21 @@ public class CryptoController {
         }
     }
 
-    private CryptoResponse findCryptoInResponse(JsonNode data, CryptoInfo cryptoInfo) {
+    private CryptoResponse findCryptoInBinanceResponse(JsonNode data, CryptoInfo cryptoInfo, String binanceSymbol) {
         for (JsonNode item : data) {
-            if (item.has("symbol") && cryptoInfo.getSymbol().equalsIgnoreCase(item.get("symbol").asText())) {
+            if (item.has("symbol") && binanceSymbol.equalsIgnoreCase(item.get("symbol").asText())) {
                 try {
-                    double marketPrice = item.get("quote").get("USD").get("price").asDouble();
+                    double marketPrice = item.get("lastPrice").asDouble();
                     double sellPrice = calculateSellPrice(marketPrice);
+                    double priceChangePercent24h = item.has("priceChangePercent") ? item.get("priceChangePercent").asDouble() : 0.0;
                     
                     return new CryptoResponse(
                         cryptoInfo.getId(),
                         cryptoInfo.getSymbol(),
                         cryptoInfo.getName(),
                         marketPrice,
-                        sellPrice
+                        sellPrice,
+                        priceChangePercent24h
                     );
                 } catch (Exception e) {
                     logger.warn("Error parsing crypto data for {}: {}", cryptoInfo.getSymbol(), e.getMessage());
@@ -184,7 +156,8 @@ public class CryptoController {
                 cryptoInfo.getSymbol(),
                 cryptoInfo.getName(),
                 marketPrice,
-                calculateSellPrice(marketPrice)
+                calculateSellPrice(marketPrice),
+                0.0
             ));
         }
         return ResponseEntity.ok(cryptos);
@@ -228,13 +201,15 @@ public class CryptoController {
         private String name;
         private double marketPrice;
         private double sellPrice;
+        private double priceChangePercent24h;
 
-        public CryptoResponse(String id, String symbol, String name, double marketPrice, double sellPrice) {
+        public CryptoResponse(String id, String symbol, String name, double marketPrice, double sellPrice, double priceChangePercent24h) {
             this.id = id;
             this.symbol = symbol;
             this.name = name;
             this.marketPrice = marketPrice;
             this.sellPrice = sellPrice;
+            this.priceChangePercent24h = priceChangePercent24h;
         }
 
         public String getId() { return id; }
@@ -242,6 +217,7 @@ public class CryptoController {
         public String getName() { return name; }
         public double getMarketPrice() { return marketPrice; }
         public double getSellPrice() { return sellPrice; }
+        public double getPriceChangePercent24h() { return priceChangePercent24h; }
     }
 
     static class CryptoPriceResponse {
@@ -249,17 +225,20 @@ public class CryptoController {
         private double marketPrice;
         private double sellPrice;
         private double discountPercent;
+        private double priceChangePercent24h;
 
-        public CryptoPriceResponse(String symbol, double marketPrice, double sellPrice, double discountPercent) {
+        public CryptoPriceResponse(String symbol, double marketPrice, double sellPrice, double discountPercent, double priceChangePercent24h) {
             this.symbol = symbol;
             this.marketPrice = marketPrice;
             this.sellPrice = sellPrice;
             this.discountPercent = discountPercent;
+            this.priceChangePercent24h = priceChangePercent24h;
         }
 
         public String getSymbol() { return symbol; }
         public double getMarketPrice() { return marketPrice; }
         public double getSellPrice() { return sellPrice; }
         public double getDiscountPercent() { return discountPercent; }
+        public double getPriceChangePercent24h() { return priceChangePercent24h; }
     }
 } 
